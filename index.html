@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOC Toolkit</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-strong: #2563eb;
+      --danger: #ef4444;
+      --success: #10b981;
+      --accent: #f59e0b;
+      --border: #1f2937;
+      --radius: 10px;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    :root.light {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #4b5563;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --danger: #dc2626;
+      --success: #059669;
+      --accent: #d97706;
+      --border: #e5e7eb;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #0b1220 0%, #0b1220ea 100%);
+      color: var(--text);
+      padding: 24px 18px;
+      border-right: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    :root.light .sidebar { background: #fff; }
+
+    .brand {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .brand span {
+      padding: 8px 10px;
+      background: rgba(59, 130, 246, 0.12);
+      border-radius: 8px;
+      color: var(--primary);
+    }
+
+    .nav {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 30px 0;
+      display: grid;
+      gap: 8px;
+    }
+    .nav li {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav li:hover { border-color: var(--border); }
+    .nav li.active {
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0));
+      border-color: rgba(59, 130, 246, 0.4);
+      color: var(--primary);
+    }
+
+    .theme-toggle {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 28px;
+      overflow: auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.2rem;
+      letter-spacing: -0.01em;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+    .grid.two {
+      grid-template-columns: 2fr 1fr;
+    }
+    .grid.responsive {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    label { font-weight: 600; display: block; margin-bottom: 6px; color: var(--muted); }
+    textarea, input[type="date"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      resize: vertical;
+    }
+
+    textarea { min-height: 180px; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+    }
+    button:active { transform: translateY(1px); box-shadow: none; }
+
+    .primary { background: var(--primary); }
+    .primary:hover { background: var(--primary-strong); }
+    .danger { background: var(--danger); }
+    .success { background: var(--success); }
+    .secondary { background: #4b5563; }
+
+    pre, .mono-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 140px;
+    }
+
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill .dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    th { position: relative; cursor: pointer; color: var(--muted); font-weight: 700; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .filter-dropdown {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 160px;
+      max-height: 220px;
+      overflow: auto;
+      z-index: 20;
+      box-shadow: var(--shadow);
+    }
+    .filter-dropdown div { padding: 8px 10px; cursor: pointer; }
+    .filter-dropdown div:hover { background: rgba(59,130,246,0.12); }
+
+    .history-item { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+    .history-header { padding: 10px 12px; background: rgba(59,130,246,0.15); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 700; }
+    .history-content { display: none; padding: 12px; background: rgba(255,255,255,0.02); }
+
+    .badge { padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.08); font-size: 0.85rem; }
+
+    .empty { color: var(--muted); font-style: italic; }
+
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .sidebar { position: relative; height: auto; width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+      .main { padding: 16px; }
+      .nav { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span>◎</span> NOC Toolkit</div>
+    <ul class="nav" id="nav">
+      <li data-target="formatter" class="active">📝<span>Formatador</span></li>
+      <li data-target="checklist">📋<span>Checklist</span></li>
+      <li data-target="history">🕒<span>Históricos</span></li>
+      <li data-target="settings">⚙️<span>Configurações</span></li>
+    </ul>
+    <button class="theme-toggle" id="themeToggle">Alternar tema <span>🌗</span></button>
+  </aside>
+
+  <main class="main">
+    <!-- Formatador section -->
+    <section id="formatter" class="section active grid two">
+      <div class="card grid">
+        <div class="grid responsive">
+          <div>
+            <label for="rawInput">Cole a lista bruta</label>
+            <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
+          </div>
+          <div>
+            <label for="formattedOutput">Resultado</label>
+            <pre id="formattedOutput" class="mono-box"></pre>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="btnFormat">Formatar</button>
+          <button class="success" id="btnCopyFormatted">Copiar</button>
+          <button class="success" id="btnExportTxtFormatted">Exportar TXT</button>
+          <button class="success" id="btnExportXlsxFormatted">Exportar XLSX</button>
+          <button class="danger" id="btnClearFormatted">Limpar</button>
+        </div>
+        <div class="stats">
+          <div class="pill"><span class="dot" style="background: var(--success);"></span> Execução: <span id="statExecucao">0</span></div>
+          <div class="pill"><span class="dot" style="background: var(--danger);"></span> Necessitam atuação: <span id="statAcao">0</span></div>
+          <div class="pill"><span class="dot" style="background: var(--primary);"></span> Total: <span id="statTotal">0</span></div>
+          <div class="pill"><span class="dot" style="background: var(--accent);"></span> Dias: <span id="statDias">--</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Histórico do formatador</h2>
+        <div id="formatHistory" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- Checklist section -->
+    <section id="checklist" class="section grid">
+      <div class="card grid">
+        <div class="grid responsive">
+          <div>
+            <label for="inputDate">Data padrão</label>
+            <input type="date" id="inputDate">
+          </div>
+          <div style="grid-column: span 2;">
+            <label for="inputText">Cole as linhas</label>
+            <textarea id="inputText" placeholder="[22:12] SRVO - ABC - necessário execução"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="btnAdd">Adicionar</button>
+          <button class="danger" id="btnDeleteAll">Limpar tabela</button>
+          <button class="success" id="btnExportChecklistCsv">Exportar CSV</button>
+          <button class="success" id="btnExportChecklistXlsx">Exportar XLSX</button>
+          <button class="success" id="btnExportChecklistTxt">Exportar TXT</button>
+        </div>
+        <div class="actions" id="filterBar" style="display:none;">
+          <span id="filterInfo"></span>
+          <button class="secondary" id="btnClearFilter">Limpar filtro</button>
+        </div>
+        <div class="mono-box" style="padding:0; overflow:auto;">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th data-key="datahora">DataHora</th>
+                <th data-key="servico">Serviço</th>
+                <th data-key="empresa">Empresa</th>
+                <th data-key="observacao">Observação</th>
+                <th data-key="atuacao">Atuação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- History section -->
+    <section id="history" class="section grid responsive">
+      <div class="card">
+        <h2>Histórico do formatador</h2>
+        <div id="formatHistoryList" class="grid"></div>
+      </div>
+      <div class="card">
+        <h2>Histórico do checklist</h2>
+        <div id="checklistHistory"></div>
+      </div>
+    </section>
+
+    <!-- Settings section -->
+    <section id="settings" class="section grid responsive">
+      <div class="card">
+        <h2>Preferências</h2>
+        <div class="actions" style="margin-bottom:16px;">
+          <button class="secondary" id="btnThemeDark">Tema escuro</button>
+          <button class="secondary" id="btnThemeLight">Tema claro</button>
+        </div>
+        <button class="danger" id="btnClearAll">Apagar tudo</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Estado ----------
+    const formatHistoryKey = 'nocToolkit_formatHistory';
+    const checklistRecordsKey = 'nocToolkit_records';
+    const checklistHistoryKey = 'nocToolkit_history';
+    const themeKey = 'nocToolkit_theme';
+
+    let ultimaSaida = [];
+    let formatHistory = {}; // {date: [lines]}
+    const state = {
+      records: [],
+      history: [],
+      filter: { key: null, value: null },
+      theme: 'dark'
+    };
+
+    // ---------- Utilidades ----------
+    const norm = (str) => str.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+    const todayYMD = () => new Date().toISOString().slice(0, 10);
+    const chunk = (arr, size) => {
+      const res = [];
+      for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+      return res;
+    };
+    const toISO8601Z = (y, m, d, hh, mi) => {
+      const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d), parseInt(hh), parseInt(mi), 0);
+      return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    };
+    const incDate = (dateStr) => {
+      const [d, m, y] = dateStr.split('/').map((p) => parseInt(p, 10));
+      const dt = new Date(y, m - 1, d);
+      dt.setDate(dt.getDate() + 1);
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      return `${dd}/${mm}/${dt.getFullYear()}`;
+    };
+
+    // ---------- Tema ----------
+    function applyTheme(theme) {
+      state.theme = theme;
+      const root = document.documentElement;
+      if (theme === 'light') root.classList.add('light');
+      else root.classList.remove('light');
+      localStorage.setItem(themeKey, theme);
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem(themeKey);
+      applyTheme(saved || 'dark');
+    }
+
+    // ---------- Formatador ----------
+    function formatarLista() {
+      const input = document.getElementById('rawInput').value;
+      const linhas = input.split(/\n+/);
+      const resultado = [];
+      let countExecucao = 0;
+      let countAcao = 0;
+      let totalServicos = 0;
+      let currentDate = '';
+      let dates = [];
+      let lastHour = null;
+      const regexLinha = /^(\d{1,2}[:h]\d{2}h?)\s*[\-–]\s*([A-Z\d]{4,})\s*[\-–]\s*([A-Z,\s]+)\s*[\-–]\s*(.+)$/;
+      const regexData = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+
+      linhas.forEach((linha) => {
+        const texto = linha.trim();
+        if (texto === '') return;
+        if (regexData.test(texto)) {
+          currentDate = texto;
+          dates.push(currentDate);
+          resultado.push(texto);
+          lastHour = null;
+          return;
+        }
+        const match = texto.match(regexLinha);
+        if (match) {
+          let hora = match[1].replace(/h/g, ':').replace(/:$/, '');
+          const servico = match[2].toUpperCase();
+          const empresas = match[3].split(/[\,\s]+/).filter(Boolean);
+          let statusOriginal = match[4].trim();
+          const statusLower = statusOriginal.toLowerCase();
+          let status;
+          if (statusLower.includes('servi')) {
+            status = 'Serviço em execução.';
+            countExecucao++;
+          } else if (statusLower.includes('sem atuação') || statusLower.includes('sem atuacao')) {
+            status = 'Sem atuação.';
+            countAcao++;
+          } else if (statusLower.includes('necessário') || statusLower.includes('necessario')) {
+            status = 'Necessário execução do serviço.';
+            countAcao++;
+          } else {
+            status = statusOriginal;
+          }
+          const horaParts = hora.split(':');
+          const horaInt = parseInt(horaParts[0], 10);
+          if (currentDate !== '' && lastHour !== null && horaInt < lastHour) {
+            currentDate = incDate(currentDate);
+            if (!dates.includes(currentDate)) dates.push(currentDate);
+            resultado.push(currentDate);
+            lastHour = horaInt;
+          } else {
+            lastHour = horaInt;
+          }
+          empresas.forEach((emp) => {
+            totalServicos++;
+            resultado.push(`${hora} - ${servico} - ${emp.toUpperCase()} - ${status}`);
+          });
+        } else {
+          resultado.push(texto);
+        }
+      });
+
+      ultimaSaida = resultado.slice();
+      document.getElementById('formattedOutput').textContent = resultado.join('\n');
+      document.getElementById('statExecucao').textContent = countExecucao;
+      document.getElementById('statAcao').textContent = countAcao;
+      document.getElementById('statTotal').textContent = totalServicos;
+      document.getElementById('statDias').textContent = dates.join(', ') || '--';
+      salvarHistorico(resultado);
+      renderFormatHistory();
+    }
+
+    function salvarHistorico(linhas) {
+      let history = formatHistory;
+      let diaAtual = '';
+      linhas.forEach((line) => {
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) {
+          diaAtual = line;
+          if (!history[diaAtual]) history[diaAtual] = [];
+        } else if (diaAtual) {
+          history[diaAtual].push(line);
+        }
+      });
+      formatHistory = history;
+      localStorage.setItem(formatHistoryKey, JSON.stringify(history));
+    }
+
+    function renderFormatHistory() {
+      const container = document.getElementById('formatHistory');
+      const listContainer = document.getElementById('formatHistoryList');
+      container.innerHTML = '';
+      listContainer.innerHTML = '';
+      const dates = Object.keys(formatHistory);
+      if (!dates.length) {
+        const empty = '<p class="empty">Nenhum histórico salvo.</p>';
+        container.innerHTML = empty;
+        listContainer.innerHTML = empty;
+        return;
+      }
+      dates.sort((a, b) => {
+        const [da, ma, ya] = a.split('/').map(Number);
+        const [db, mb, yb] = b.split('/').map(Number);
+        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+      });
+      const buildNode = (date) => {
+        const pre = document.createElement('pre');
+        pre.className = 'mono-box';
+        pre.textContent = formatHistory[date].join('\n');
+        const wrap = document.createElement('div'); wrap.className = 'history-item';
+        const header = document.createElement('div'); header.className = 'history-header';
+        header.innerHTML = `<span>${date}</span><div class="actions">` +
+          `<button class="success" data-date="${date}" data-action="copy">Copiar</button>` +
+          `<button class="danger" data-date="${date}" data-action="delete">Excluir</button>` +
+          `<button class="success" data-date="${date}" data-action="export">Exportar TXT</button>` +
+        `</div>`;
+        const content = document.createElement('div'); content.className = 'history-content'; content.appendChild(pre);
+        header.addEventListener('click', (e) => { if (e.target.dataset.action) return; content.style.display = content.style.display === 'block' ? 'none' : 'block'; });
+        wrap.appendChild(header); wrap.appendChild(content);
+        return wrap;
+      };
+      dates.forEach((date) => {
+        container.appendChild(buildNode(date));
+        listContainer.appendChild(buildNode(date));
+      });
+    }
+
+    function copyFormatted() {
+      if (!ultimaSaida.length) return;
+      navigator.clipboard.writeText(ultimaSaida.join('\n'));
+    }
+
+    function exportTxtFormatted() {
+      if (!ultimaSaida.length) return;
+      const blob = new Blob([ultimaSaida.join('\n')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lista-formatada.txt';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportXlsxFormatted() {
+      if (!ultimaSaida.length) return;
+      const rows = ultimaSaida.map((texto) => ({ Texto: texto }));
+      exportChunkedXlsx(rows, ['Texto'], 'lista_formatada');
+    }
+
+    function clearFormatted() {
+      document.getElementById('rawInput').value = '';
+      document.getElementById('formattedOutput').textContent = '';
+      ultimaSaida = [];
+      document.getElementById('statExecucao').textContent = '0';
+      document.getElementById('statAcao').textContent = '0';
+      document.getElementById('statTotal').textContent = '0';
+      document.getElementById('statDias').textContent = '--';
+    }
+
+    function handleFormatHistoryActions(e) {
+      const target = e.target;
+      const date = target.dataset.date;
+      if (!date) return;
+      if (target.dataset.action === 'copy') {
+        const texto = `${date}\n${formatHistory[date].join('\n')}`;
+        navigator.clipboard.writeText(texto);
+      }
+      if (target.dataset.action === 'delete') {
+        delete formatHistory[date];
+        localStorage.setItem(formatHistoryKey, JSON.stringify(formatHistory));
+        renderFormatHistory();
+      }
+      if (target.dataset.action === 'export') {
+        const blob = new Blob([`${date}\n${formatHistory[date].join('\n')}`], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `historico-${date}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      }
+    }
+
+    // ---------- Checklist ----------
+    function parseLineAssumingDate(line, defaultDateYMD) {
+      let text = line.trim();
+      if (!text) return null;
+      text = text.replace(/[–—]/g, '-');
+      let time = '00:00';
+      let tm = text.match(/\[(\d{2}:\d{2})\]/);
+      if (tm) { time = tm[1]; text = text.replace(tm[0], ''); }
+      else if ((tm = text.match(/(\d{2})h(\d{2})/i))) { time = `${tm[1]}:${tm[2]}`; text = text.replace(tm[0], ''); }
+      else if ((tm = text.match(/(\d{2}):(\d{2})h?/))) { time = `${tm[1]}:${tm[2]}`; text = text.replace(tm[0], ''); }
+      text = text.replace(/^\s*[-:]+\s*/, '').trim();
+      const parts = text.split(/\s*-\s*/).map(p => p.trim()).filter(Boolean);
+      let servico = ''; let empresa = ''; let companies = null;
+      if (parts.length > 0) {
+        const sMatch = parts[0].match(/^[A-Z][A-Z0-9]{3,}$/);
+        if (sMatch) servico = sMatch[0];
+      }
+      if (parts.length > 1) {
+        const possible = parts[1].split(',').map(s => s.trim()).filter(Boolean);
+        companies = possible.filter(code => /^[A-Z]{3}$/.test(code));
+        if (companies.length === 1) empresa = companies[0];
+      }
+      const observacao = '';
+      const normalized = norm(line);
+      let atuacao = '';
+      if (/necessario\s+(?:a\s+)?(reinicio|atuacao|execucao)/.test(normalized)) atuacao = 'SIM';
+      else if (/em execucao|sem necessidade de atuacao|sem atuacao/.test(normalized)) atuacao = 'NÃO';
+      const [y, m, d] = defaultDateYMD.split('-');
+      const [hh, mi] = time.split(':');
+      const iso = toISO8601Z(y, m, d, hh || '00', mi || '00');
+      if (companies && companies.length > 1) {
+        return companies.map(code => ({ datahora: iso, servico, empresa: code === 'EMG' ? 'EMR' : code, observacao, atuacao }));
+      }
+      return { datahora: iso, servico, empresa: empresa === 'EMG' ? 'EMR' : empresa, observacao, atuacao };
+    }
+
+    function parseTextByDateHeaders(raw, fallbackDateYMD) {
+      const byDay = {}; const all = [];
+      const lines = raw.split(/\n+/);
+      let activeDate = null; let currentDateYMD = fallbackDateYMD; let prevMinutes = null;
+      const datePattern = /^\s*\|?\s*(\d{2})\/(\d{2})\/(\d{4})\s*$/;
+      for (const line of lines) {
+        const trimmed = line.trim(); if (!trimmed) continue;
+        if (/\(.*novos registros abaixo.*\)/i.test(trimmed)) continue;
+        const m = trimmed.match(datePattern);
+        if (m) {
+          const d = `${m[3]}-${m[2]}-${m[1]}`; activeDate = d; currentDateYMD = d; prevMinutes = null; if (!byDay[d]) byDay[d] = []; continue;
+        }
+        if (activeDate) currentDateYMD = activeDate; else currentDateYMD = currentDateYMD || fallbackDateYMD;
+        let timeStr = '00:00'; let tm; let tmpText = trimmed.replace(/[–—]/g, '-');
+        if ((tm = tmpText.match(/\[(\d{2}:\d{2})\]/))) timeStr = tm[1];
+        else if ((tm = tmpText.match(/(\d{2})h(\d{2})/i))) timeStr = `${tm[1]}:${tm[2]}`;
+        else if ((tm = tmpText.match(/(\d{2}):(\d{2})h?/))) timeStr = `${tm[1]}:${tm[2]}`;
+        const [hhStr, miStr] = timeStr.split(':');
+        const curMinutes = parseInt(hhStr, 10) * 60 + parseInt(miStr, 10);
+        const lateThreshold = 1320; const earlyThreshold = 360;
+        if (prevMinutes !== null && curMinutes < prevMinutes && prevMinutes >= lateThreshold && curMinutes <= earlyThreshold) {
+          const dt = new Date(currentDateYMD + 'T00:00:00'); dt.setUTCDate(dt.getUTCDate() + 1); const newYMD = dt.toISOString().slice(0, 10); currentDateYMD = newYMD; activeDate = newYMD; if (!byDay[currentDateYMD]) byDay[currentDateYMD] = [];
+        }
+        prevMinutes = curMinutes;
+        const rec = parseLineAssumingDate(trimmed, currentDateYMD);
+        if (!rec) continue;
+        if (Array.isArray(rec)) { rec.forEach(r => { all.push(r); if (!byDay[currentDateYMD]) byDay[currentDateYMD] = []; byDay[currentDateYMD].push(r); }); }
+        else { all.push(rec); if (!byDay[currentDateYMD]) byDay[currentDateYMD] = []; byDay[currentDateYMD].push(rec); }
+      }
+      return { byDay, all };
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector('#dataTable tbody');
+      tbody.innerHTML = '';
+      let data = state.records;
+      if (state.filter.key && state.filter.value !== null) data = data.filter(r => (r[state.filter.key] || '') === state.filter.value);
+      data.forEach((record, index) => {
+        const tr = document.createElement('tr');
+        ['datahora','servico','empresa'].forEach((key) => {
+          const td = document.createElement('td'); td.textContent = record[key]; tr.appendChild(td);
+        });
+        const tdObs = document.createElement('td'); tdObs.contentEditable = true; tdObs.textContent = record.observacao; tdObs.addEventListener('blur', () => { state.records[index].observacao = tdObs.textContent; saveAll(); }); tr.appendChild(tdObs);
+        const tdAtu = document.createElement('td'); tdAtu.textContent = record.atuacao; if (record.atuacao === 'SIM') tdAtu.style.color = 'var(--danger)'; if (record.atuacao === 'NÃO') tdAtu.style.color = 'var(--success)'; tr.appendChild(tdAtu);
+        tbody.appendChild(tr);
+      });
+      const filterBar = document.getElementById('filterBar');
+      if (state.filter.key) { document.getElementById('filterInfo').textContent = `Filtro: ${state.filter.key} = ${state.filter.value}`; filterBar.style.display = 'flex'; }
+      else filterBar.style.display = 'none';
+    }
+
+    function renderChecklistHistory() {
+      const container = document.getElementById('checklistHistory');
+      container.innerHTML = '';
+      if (!state.history.length) { container.innerHTML = '<p class="empty">Sem histórico.</p>'; return; }
+      state.history.sort((a, b) => b.dateYYYYMMDD.localeCompare(a.dateYYYYMMDD));
+      state.history.forEach(batch => {
+        const item = document.createElement('div'); item.className = 'history-item';
+        const header = document.createElement('div'); header.className = 'history-header'; header.innerHTML = `<span>${batch.dateYYYYMMDD}</span><span>▼</span>`; item.appendChild(header);
+        const content = document.createElement('div'); content.className = 'history-content';
+        const btns = document.createElement('div'); btns.className = 'actions';
+        const mkBtn = (text, cls, handler) => { const b = document.createElement('button'); b.className = cls; b.textContent = text; b.addEventListener('click', (e) => { e.stopPropagation(); handler(); }); return b; };
+        btns.appendChild(mkBtn('Exportar CSV','success', () => exportCSV(batch.items)));
+        btns.appendChild(mkBtn('Exportar XLSX','success', () => exportChunkedXlsx(mapForExport(batch.items), ['DataHora','Servico','Empresa','Observacao','Atuacao'], 'carga_diario_de_bordo')));
+        btns.appendChild(mkBtn('Exportar TXT','success', () => exportTXT(batch.items)));
+        btns.appendChild(mkBtn('Excluir','danger', () => { if (confirm('Excluir este dia?')) { const idx = state.history.findIndex(h => h.id === batch.id); if (idx >= 0) { state.history.splice(idx,1); saveAll(); renderChecklistHistory(); } } }));
+        content.appendChild(btns);
+        const tbl = document.createElement('table'); const thead = document.createElement('thead'); thead.innerHTML = '<tr><th>DataHora</th><th>Serviço</th><th>Empresa</th><th>Observação</th><th>Atuação</th></tr>'; tbl.appendChild(thead);
+        const tbody = document.createElement('tbody'); batch.items.forEach(rec => { const tr = document.createElement('tr'); ['datahora','servico','empresa','observacao','atuacao'].forEach(k => { const td = document.createElement('td'); td.textContent = rec[k]; if (k==='atuacao') { if (rec[k]==='SIM') td.style.color = 'var(--danger)'; if (rec[k]==='NÃO') td.style.color = 'var(--success)'; } tr.appendChild(td); }); tbody.appendChild(tr); }); tbl.appendChild(tbody);
+        content.appendChild(tbl); item.appendChild(content);
+        header.addEventListener('click', () => { content.style.display = content.style.display === 'block' ? 'none' : 'block'; });
+        container.appendChild(item);
+      });
+    }
+
+    function mapForExport(items) { return items.map(it => ({ DataHora: it.datahora, Servico: it.servico, Empresa: it.empresa, Observacao: it.observacao, Atuacao: it.atuacao })); }
+
+    function exportCSV(items = state.records, filename = 'carga_diario_de_bordo.csv') {
+      if (!items.length) return alert('Nenhum registro para exportar.');
+      const header = ['DataHora','Servico','Empresa','Observacao','Atuacao'];
+      const rows = items.map(r => [r.datahora, r.servico, r.empresa, r.observacao, r.atuacao]);
+      const csv = [header.join(',')].concat(rows.map(row => row.map(v => '"' + (v || '').replace(/"/g, '""') + '"').join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportTXT(items = state.records, filename = 'carga_diario_de_bordo.txt') {
+      if (!items.length) return alert('Nenhum registro para exportar.');
+      const header = ['DataHora','Servico','Empresa','Observacao','Atuacao'];
+      const rows = items.map(r => [r.datahora, r.servico, r.empresa, r.observacao, r.atuacao]);
+      const tsv = [header.join('\t')].concat(rows.map(r => r.join('\t'))).join('\n');
+      const blob = new Blob([tsv], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportChunkedXlsx(jsonData, headers, baseName) {
+      if (!jsonData.length) return alert('Nenhum registro para exportar.');
+      const wb = XLSX.utils.book_new();
+      const slices = chunk(jsonData, 256);
+      slices.forEach((part, idx) => {
+        const ws = XLSX.utils.json_to_sheet(part, { header: headers, skipHeader: false });
+        ws['!cols'] = headers.map(() => ({ wch: 24 }));
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: range.e.r } }) };
+        XLSX.utils.book_append_sheet(wb, ws, `${baseName}_${idx + 1}`);
+      });
+      XLSX.writeFile(wb, `${baseName}.xlsx`);
+    }
+
+    function addHistoryBatch(items, dateYMD) {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      state.history.push({ id, dateYYYYMMDD: dateYMD, createdAtISO: new Date().toISOString(), items: JSON.parse(JSON.stringify(items)) });
+    }
+
+    function saveAll() {
+      localStorage.setItem(checklistRecordsKey, JSON.stringify(state.records));
+      localStorage.setItem(checklistHistoryKey, JSON.stringify(state.history));
+    }
+
+    function loadAll() {
+      const recs = localStorage.getItem(checklistRecordsKey);
+      if (recs) state.records = JSON.parse(recs);
+      const hist = localStorage.getItem(checklistHistoryKey);
+      if (hist) state.history = JSON.parse(hist);
+      const fmt = localStorage.getItem(formatHistoryKey);
+      if (fmt) formatHistory = JSON.parse(fmt);
+    }
+
+    // ---------- Eventos ----------
+    document.getElementById('btnFormat').addEventListener('click', formatarLista);
+    document.getElementById('btnCopyFormatted').addEventListener('click', copyFormatted);
+    document.getElementById('btnExportTxtFormatted').addEventListener('click', exportTxtFormatted);
+    document.getElementById('btnExportXlsxFormatted').addEventListener('click', exportXlsxFormatted);
+    document.getElementById('btnClearFormatted').addEventListener('click', clearFormatted);
+    document.getElementById('formatHistory').addEventListener('click', handleFormatHistoryActions);
+    document.getElementById('formatHistoryList').addEventListener('click', handleFormatHistoryActions);
+
+    document.getElementById('btnAdd').addEventListener('click', () => {
+      const raw = document.getElementById('inputText').value.trim();
+      if (!raw) return alert('Cole algum texto.');
+      const dateInput = document.getElementById('inputDate').value || todayYMD();
+      const { byDay, all } = parseTextByDateHeaders(raw, dateInput);
+      if (!all.length) return alert('Nenhum registro válido encontrado.');
+      state.records.push(...all);
+      Object.keys(byDay).forEach(date => addHistoryBatch(byDay[date], date));
+      saveAll(); renderTable(); renderChecklistHistory();
+      document.getElementById('inputText').value = '';
+    });
+
+    document.getElementById('btnDeleteAll').addEventListener('click', () => {
+      if (!state.records.length) return;
+      if (confirm('Apagar todos os registros da tabela?')) { state.records = []; saveAll(); renderTable(); }
+    });
+
+    document.getElementById('btnExportChecklistCsv').addEventListener('click', () => exportCSV());
+    document.getElementById('btnExportChecklistXlsx').addEventListener('click', () => exportChunkedXlsx(mapForExport(state.records), ['DataHora','Servico','Empresa','Observacao','Atuacao'], 'carga_diario_de_bordo'));
+    document.getElementById('btnExportChecklistTxt').addEventListener('click', () => exportTXT());
+
+    document.getElementById('btnClearFilter').addEventListener('click', () => { state.filter = { key: null, value: null }; renderTable(); });
+
+    document.querySelectorAll('#dataTable th').forEach(th => {
+      const key = th.dataset.key;
+      const dropdown = document.createElement('div'); dropdown.className = 'filter-dropdown'; th.appendChild(dropdown);
+      th.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        document.querySelectorAll('.filter-dropdown').forEach(dd => { if (dd !== dropdown) dd.style.display = 'none'; });
+        if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; return; }
+        dropdown.innerHTML = '';
+        const values = Array.from(new Set(state.records.map(r => r[key] || '')));
+        values.forEach(val => { const opt = document.createElement('div'); opt.textContent = val || '(vazio)'; opt.addEventListener('click', (e) => { e.stopPropagation(); state.filter = { key, value: val }; dropdown.style.display = 'none'; renderTable(); }); dropdown.appendChild(opt); });
+        dropdown.style.display = 'block';
+      });
+    });
+    document.addEventListener('click', () => { document.querySelectorAll('.filter-dropdown').forEach(dd => dd.style.display = 'none'); });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = state.theme === 'dark' ? 'light' : 'dark'; applyTheme(next);
+    });
+    document.getElementById('btnThemeDark').addEventListener('click', () => applyTheme('dark'));
+    document.getElementById('btnThemeLight').addEventListener('click', () => applyTheme('light'));
+
+    document.getElementById('btnClearAll').addEventListener('click', () => {
+      if (confirm('Limpar tabela, históricos e listas salvas?')) {
+        state.records = []; state.history = []; formatHistory = {}; ultimaSaida = [];
+        localStorage.removeItem(formatHistoryKey);
+        saveAll(); renderTable(); renderChecklistHistory(); renderFormatHistory(); clearFormatted();
+      }
+    });
+
+    document.querySelectorAll('#nav li').forEach(li => {
+      li.addEventListener('click', () => {
+        document.querySelectorAll('#nav li').forEach(el => el.classList.remove('active'));
+        li.classList.add('active');
+        const target = li.dataset.target;
+        document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ---------- Inicialização ----------
+    window.addEventListener('load', () => {
+      loadTheme();
+      loadAll();
+      renderTable();
+      renderChecklistHistory();
+      renderFormatHistory();
+      const dateInput = document.getElementById('inputDate');
+      if (!dateInput.value) dateInput.value = todayYMD();
+    });
+  </script>
+</body>
+</html>
