@@ -566,3 +566,522 @@
   </script>
 </body>
 </html>
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a5b1c548c5ef2fa0799e5307c29051b8b68df3d
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,509 @@
++<!DOCTYPE html>
++<html lang="pt-BR">
++<head>
++  <meta charset="UTF-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1.0">
++  <title>NOC Formatter</title>
++  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
++  <style>
++    :root {
++      --bg: #050505;
++      --panel: #0a0f0a;
++      --card: #0f1410;
++      --text: #e0ffe2;
++      --muted: #6adb7f;
++      --accent: #00ff80;
++      --accent-strong: #19c97f;
++      --danger: #ff5978;
++      --shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
++      --border: #113b1f;
++      --radius: 12px;
++    }
++
++    :root.light {
++      --bg: #f2fff4;
++      --panel: #e9f6eb;
++      --card: #ffffff;
++      --text: #0b1a0f;
++      --muted: #217a35;
++      --accent: #1ea35e;
++      --accent-strong: #118348;
++      --danger: #c81e4a;
++      --shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
++      --border: #cde7d1;
++    }
++
++    * { box-sizing: border-box; }
++    body {
++      margin: 0;
++      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
++      background: radial-gradient(circle at 20% 20%, rgba(0, 255, 128, 0.05), transparent 25%),
++                  radial-gradient(circle at 80% 10%, rgba(0, 255, 128, 0.04), transparent 20%),
++                  linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
++      color: var(--text);
++      min-height: 100vh;
++    }
++
++    .page {
++      max-width: 1100px;
++      margin: 0 auto;
++      padding: 28px 18px 40px;
++      display: grid;
++      gap: 18px;
++    }
++
++    .hero {
++      background: linear-gradient(90deg, rgba(0, 255, 128, 0.08), rgba(0, 255, 128, 0));
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      padding: 16px 18px;
++      display: flex;
++      align-items: center;
++      justify-content: space-between;
++      box-shadow: var(--shadow);
++    }
++    .brand {
++      display: flex;
++      align-items: center;
++      gap: 12px;
++      font-weight: 800;
++      letter-spacing: -0.01em;
++    }
++    .brand-icon {
++      width: 44px;
++      height: 44px;
++      border-radius: 12px;
++      background: radial-gradient(circle at 30% 30%, rgba(0,255,128,0.25), rgba(0,255,128,0.1));
++      border: 1px solid var(--border);
++      display: grid;
++      place-items: center;
++      box-shadow: var(--shadow);
++      font-size: 1.3rem;
++      color: var(--accent);
++    }
++
++    .theme-toggle {
++      background: var(--card);
++      border: 1px solid var(--border);
++      color: var(--text);
++      padding: 10px 14px;
++      border-radius: var(--radius);
++      cursor: pointer;
++      font-weight: 700;
++      display: inline-flex;
++      gap: 8px;
++      align-items: center;
++      box-shadow: var(--shadow);
++    }
++
++    .grid { display: grid; gap: 14px; }
++    .card {
++      background: var(--card);
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      padding: 18px;
++      box-shadow: var(--shadow);
++    }
++    h2 { margin: 0 0 10px 0; letter-spacing: -0.01em; }
++    label { display: block; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
++
++    textarea {
++      width: 100%;
++      min-height: 160px;
++      padding: 12px;
++      border-radius: var(--radius);
++      border: 1px solid var(--border);
++      background: var(--panel);
++      color: var(--text);
++      resize: vertical;
++    }
++
++    .mono-box {
++      background: var(--panel);
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      padding: 12px;
++      min-height: 160px;
++      white-space: pre-wrap;
++      word-break: break-word;
++    }
++
++    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
++    button {
++      padding: 10px 14px;
++      border: none;
++      border-radius: var(--radius);
++      cursor: pointer;
++      font-weight: 700;
++      letter-spacing: -0.01em;
++      color: #041507;
++      background: var(--accent);
++      box-shadow: 0 10px 26px rgba(0,255,128,0.15);
++    }
++    button:hover { background: var(--accent-strong); }
++    .ghost { background: transparent; color: var(--text); border: 1px solid var(--border); box-shadow: none; }
++    .danger { background: var(--danger); color: #fff; box-shadow: 0 10px 20px rgba(255,89,120,0.25); }
++
++    .stats { display: flex; flex-wrap: wrap; gap: 10px; }
++    .pill {
++      padding: 8px 12px;
++      border-radius: 999px;
++      border: 1px solid var(--border);
++      background: linear-gradient(90deg, rgba(0,255,128,0.15), rgba(0,255,128,0.04));
++      color: var(--text);
++      display: inline-flex;
++      gap: 8px;
++      align-items: center;
++      font-weight: 700;
++    }
++    .dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
++
++    .history-item {
++      border: 1px solid var(--border);
++      border-radius: var(--radius);
++      overflow: hidden;
++      background: var(--panel);
++    }
++    .history-header {
++      padding: 12px 14px;
++      background: rgba(0,255,128,0.08);
++      display: flex;
++      justify-content: space-between;
++      align-items: center;
++      cursor: pointer;
++      font-weight: 700;
++    }
++    .history-content { padding: 12px 14px; display: none; }
++    .history-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
++    .empty { color: var(--muted); font-style: italic; }
++
++    @media (max-width: 720px) {
++      .hero { flex-direction: column; gap: 12px; align-items: flex-start; }
++    }
++  </style>
++</head>
++<body>
++  <div class="page">
++    <header class="hero">
++      <div class="brand">
++        <div class="brand-icon">◎</div>
++        <div>
++          <div style="font-size:1.05rem;">NOC Formatter</div>
++          <div style="color:var(--muted);">Matrix edition • formate e exporte com segurança</div>
++        </div>
++      </div>
++      <button class="theme-toggle" id="themeToggle">Alternar contraste 🌗</button>
++    </header>
++
++    <section class="card grid">
++      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
++        <div>
++          <label for="rawInput">Cole a lista bruta</label>
++          <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
++        </div>
++        <div>
++          <label for="formattedOutput">Resultado formatado</label>
++          <pre id="formattedOutput" class="mono-box"></pre>
++        </div>
++      </div>
++      <div class="actions">
++        <button id="btnFormat">Formatar</button>
++        <button id="btnCopy">Copiar</button>
++        <button id="btnExportTxt">Exportar TXT</button>
++        <button id="btnExportXlsx">Exportar XLSX</button>
++        <button class="ghost" id="btnClear">Limpar</button>
++      </div>
++      <div class="stats">
++        <div class="pill">
++          <span class="dot" style="background:#1cff8e;"></span>
++          Execução: <span id="statExecucao">0</span>
++        </div>
++        <div class="pill">
++          <span class="dot" style="background:var(--danger);"></span>
++          Necessitam atuação: <span id="statAcao">0</span>
++        </div>
++        <div class="pill">
++          <span class="dot" style="background:var(--accent);"></span>
++          Total: <span id="statTotal">0</span>
++        </div>
++        <div class="pill">
++          <span class="dot" style="background:#9ef0ad;"></span>
++          Dias: <span id="statDias">--</span>
++        </div>
++      </div>
++    </section>
++
++    <section class="card">
++      <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
++        <h2 style="margin:0;">Histórico</h2>
++        <button class="ghost" id="btnClearHistory">Limpar histórico</button>
++      </div>
++      <div id="historyList" class="grid" style="gap:10px;"></div>
++    </section>
++  </div>
++
++  <script>
++    const formatHistoryKey = 'nocMatrix_formatHistory';
++    const themeKey = 'nocMatrix_theme';
++    let ultimaSaida = [];
++    let formatHistory = {}; // {date: [lines]}
++
++    const chunk = (arr, size) => {
++      const res = [];
++      for (let i = 0; i < arr.length; i += size) {
++        res.push(arr.slice(i, i + size));
++      }
++      return res;
++    };
++    const incDate = (dateStr) => {
++      const [d, m, y] = dateStr.split('/').map(Number);
++      const dt = new Date(y, m - 1, d);
++      dt.setDate(dt.getDate() + 1);
++      return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth()+1).padStart(2, '0')}/${dt.getFullYear()}`;
++    };
++
++    function applyTheme(theme) {
++      const root = document.documentElement;
++      if (theme === 'light') root.classList.add('light');
++      else root.classList.remove('light');
++      localStorage.setItem(themeKey, theme);
++    }
++    function loadTheme() {
++      const saved = localStorage.getItem(themeKey) || 'dark';
++      applyTheme(saved);
++    }
++
++    function formatarLista() {
++      const input = document.getElementById('rawInput').value;
++      const linhas = input.split(/\n+/);
++      const resultado = [];
++      let countExecucao = 0;
++      let countAcao = 0;
++      let totalServicos = 0;
++      let currentDate = '';
++      let dates = [];
++      let lastHour = null;
++      const regexLinha = /^(\d{1,2}[:h]\d{2}h?)\s*[\-–]\s*([A-Z\d]{4,})\s*[\-–]\s*([A-Z,\s]+)\s*[\-–]\s*(.+)$/;
++      const regexData = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
++
++      linhas.forEach((linha) => {
++        const texto = linha.trim();
++        if (!texto) return;
++
++        if (regexData.test(texto)) {
++          currentDate = texto;
++          if (!dates.includes(currentDate)) dates.push(currentDate);
++          resultado.push(texto);
++          lastHour = null;
++          return;
++        }
++
++        const match = texto.match(regexLinha);
++        if (match) {
++          let hora = match[1].replace(/h/g, ':').replace(/:$/, '');
++          const servico = match[2].toUpperCase();
++          const empresas = match[3].split(/[\,\s]+/).filter(Boolean);
++          const statusOriginal = match[4].trim();
++          const statusLower = statusOriginal.toLowerCase();
++          let status;
++          if (statusLower.includes('servi')) {
++            status = 'Serviço em execução.';
++            countExecucao++;
++          } else if (statusLower.includes('sem atuação') || statusLower.includes('sem atuacao')) {
++            status = 'Sem atuação.';
++            countAcao++;
++          } else if (statusLower.includes('necessário') || statusLower.includes('necessario')) {
++            status = 'Necessário execução do serviço.';
++            countAcao++;
++          } else {
++            status = statusOriginal;
++          }
++
++          const horaInt = parseInt(hora.split(':')[0], 10);
++          if (currentDate && lastHour !== null && horaInt < lastHour) {
++            currentDate = incDate(currentDate);
++            if (!dates.includes(currentDate)) dates.push(currentDate);
++            resultado.push(currentDate);
++          }
++          lastHour = horaInt;
++
++          empresas.forEach((emp) => {
++            totalServicos++;
++            resultado.push(`${hora} - ${servico} - ${emp.toUpperCase()} - ${status}`);
++          });
++        } else {
++          resultado.push(texto);
++        }
++      });
++
++      ultimaSaida = resultado.slice();
++      document.getElementById('formattedOutput').textContent = resultado.join('\n');
++      document.getElementById('statExecucao').textContent = countExecucao;
++      document.getElementById('statAcao').textContent = countAcao;
++      document.getElementById('statTotal').textContent = totalServicos;
++      document.getElementById('statDias').textContent = dates.join(', ') || '--';
++      salvarHistorico(resultado);
++      renderHistory();
++    }
++
++    function salvarHistorico(linhas) {
++      let history = formatHistory;
++      let diaAtual = '';
++      linhas.forEach((line) => {
++        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) {
++          diaAtual = line;
++          if (!history[diaAtual]) history[diaAtual] = [];
++        } else if (diaAtual) {
++          history[diaAtual].push(line);
++        }
++      });
++      formatHistory = history;
++      localStorage.setItem(formatHistoryKey, JSON.stringify(history));
++    }
++
++    function renderHistory() {
++      const container = document.getElementById('historyList');
++      container.innerHTML = '';
++      const dates = Object.keys(formatHistory);
++      if (!dates.length) {
++        container.innerHTML = '<p class="empty">Nenhum envio salvo.</p>';
++        return;
++      }
++      dates.sort((a, b) => {
++        const [da, ma, ya] = a.split('/').map(Number);
++        const [db, mb, yb] = b.split('/').map(Number);
++        return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
++      });
++
++      dates.forEach((date) => {
++        const item = document.createElement('div');
++        item.className = 'history-item';
++        const header = document.createElement('div');
++        header.className = 'history-header';
++        header.innerHTML = `<span>${date}</span><span>▼</span>`;
++        const content = document.createElement('div');
++        content.className = 'history-content';
++
++        const btns = document.createElement('div');
++        btns.className = 'history-actions';
++        const mkBtn = (label, handler) => { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', (e) => { e.stopPropagation(); handler(); }); return b; };
++        btns.appendChild(mkBtn('Copiar', () => copiarDia(date)));
++        btns.appendChild(mkBtn('Exportar TXT', () => exportTxtDia(date)));
++        btns.appendChild(mkBtn('Exportar XLSX', () => exportXlsxDia(date)));
++
++        const pre = document.createElement('pre');
++        pre.className = 'mono-box';
++        pre.textContent = formatHistory[date].join('\n');
++
++        content.appendChild(btns);
++        content.appendChild(pre);
++        item.appendChild(header);
++        item.appendChild(content);
++        header.addEventListener('click', () => { content.style.display = content.style.display === 'block' ? 'none' : 'block'; });
++        container.appendChild(item);
++      });
++    }
++
++    function clearHistory() {
++      if (!Object.keys(formatHistory).length) return;
++      if (!confirm('Deseja limpar todo o histórico salvo?')) return;
++      formatHistory = {};
++      localStorage.removeItem(formatHistoryKey);
++      renderHistory();
++    }
++
++    function copyLista() {
++      if (!ultimaSaida.length) return;
++      navigator.clipboard.writeText(ultimaSaida.join('\n'));
++    }
++    function copiarDia(date) {
++      const lines = formatHistory[date];
++      if (!lines) return;
++      navigator.clipboard.writeText(`${date}\n${lines.join('\n')}`);
++    }
++
++    function exportTxtDia(date) {
++      const lines = formatHistory[date];
++      if (!lines) return;
++      downloadTxt(`${date}\n${lines.join('\n')}`, `lista_${date.replace(/\//g, '-')}.txt`);
++    }
++    function exportXlsxDia(date) {
++      const lines = formatHistory[date];
++      if (!lines) return;
++      const payload = lines.map((l) => ({ Dia: date, Linha: l }));
++      exportChunkedXlsx(payload, ['Dia','Linha'], `lista_${date.replace(/\//g, '-')}`);
++    }
++
++    function downloadTxt(content, filename) {
++      const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
++      const url = URL.createObjectURL(blob);
++      const a = document.createElement('a');
++      a.href = url; a.download = filename;
++      document.body.appendChild(a); a.click();
++      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
++    }
++
++    function exportTxt() {
++      if (!ultimaSaida.length) return alert('Nada para exportar.');
++      downloadTxt(ultimaSaida.join('\n'), 'lista-formatada.txt');
++    }
++
++    function exportXlsx() {
++      if (!ultimaSaida.length) return alert('Nada para exportar.');
++      const rows = [];
++      let diaAtual = '';
++      ultimaSaida.forEach((line) => {
++        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) { diaAtual = line; }
++        else rows.push({ Dia: diaAtual, Linha: line });
++      });
++      exportChunkedXlsx(rows, ['Dia','Linha'], 'lista-formatada');
++    }
++
++    function exportChunkedXlsx(jsonData, headers, baseName) {
++      if (!jsonData.length) return alert('Nada para exportar.');
++      const wb = XLSX.utils.book_new();
++      const slices = chunk(jsonData, 256);
++      slices.forEach((part, idx) => {
++        const ws = XLSX.utils.json_to_sheet(part, { header: headers, skipHeader: false });
++        ws['!cols'] = headers.map(() => ({ wch: 28 }));
++        const range = XLSX.utils.decode_range(ws['!ref']);
++        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: range.e.r } }) };
++        XLSX.utils.book_append_sheet(wb, ws, `${baseName}_${idx + 1}`);
++      });
++      XLSX.writeFile(wb, `${baseName}.xlsx`);
++    }
++
++    function clearAll() {
++      ultimaSaida = [];
++      document.getElementById('rawInput').value = '';
++      document.getElementById('formattedOutput').textContent = '';
++      document.getElementById('statExecucao').textContent = '0';
++      document.getElementById('statAcao').textContent = '0';
++      document.getElementById('statTotal').textContent = '0';
++      document.getElementById('statDias').textContent = '--';
++    }
++
++    function loadAll() {
++      const fmt = localStorage.getItem(formatHistoryKey);
++      if (fmt) formatHistory = JSON.parse(fmt);
++    }
++
++    document.getElementById('btnFormat').addEventListener('click', formatarLista);
++    document.getElementById('btnCopy').addEventListener('click', copyLista);
++    document.getElementById('btnExportTxt').addEventListener('click', exportTxt);
++    document.getElementById('btnExportXlsx').addEventListener('click', exportXlsx);
++    document.getElementById('btnClear').addEventListener('click', clearAll);
++    document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
++    document.getElementById('themeToggle').addEventListener('click', () => {
++      const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
++      applyTheme(next);
++    });
++
++    window.addEventListener('load', () => {
++      loadTheme();
++      loadAll();
++      renderHistory();
++    });
++  </script>
++</body>
++</html>
+ 
+EOF
+)
