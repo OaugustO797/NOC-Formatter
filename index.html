@@ -234,7 +234,10 @@
     </section>
 
     <section class="card">
-      <h2>Histórico</h2>
+      <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
+        <h2 style="margin:0;">Histórico</h2>
+        <button class="ghost" id="btnClearHistory">Limpar histórico</button>
+      </div>
       <div id="historyList" class="grid" style="gap:10px;"></div>
     </section>
   </div>
@@ -245,8 +248,19 @@
     let ultimaSaida = [];
     let formatHistory = {}; // {date: [lines]}
 
-    const chunk = (arr, size) => { const res = []; for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size)); return res; };
-    const incDate = (dateStr) => { const [d, m, y] = dateStr.split('/').map(Number); const dt = new Date(y, m - 1, d); dt.setDate(dt.getDate() + 1); return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth()+1).padStart(2, '0')}/${dt.getFullYear()}`; };
+    const chunk = (arr, size) => {
+      const res = [];
+      for (let i = 0; i < arr.length; i += size) {
+        res.push(arr.slice(i, i + size));
+      }
+      return res;
+    };
+    const incDate = (dateStr) => {
+      const [d, m, y] = dateStr.split('/').map(Number);
+      const dt = new Date(y, m - 1, d);
+      dt.setDate(dt.getDate() + 1);
+      return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth()+1).padStart(2, '0')}/${dt.getFullYear()}`;
+    };
 
     function applyTheme(theme) {
       const root = document.documentElement;
@@ -390,6 +404,14 @@
       });
     }
 
+    function clearHistory() {
+      if (!Object.keys(formatHistory).length) return;
+      if (!confirm('Deseja limpar todo o histórico salvo?')) return;
+      formatHistory = {};
+      localStorage.removeItem(formatHistoryKey);
+      renderHistory();
+    }
+
     function copyLista() {
       if (!ultimaSaida.length) return;
       navigator.clipboard.writeText(ultimaSaida.join('\n'));
@@ -471,6 +493,7 @@
     document.getElementById('btnExportTxt').addEventListener('click', exportTxt);
     document.getElementById('btnExportXlsx').addEventListener('click', exportXlsx);
     document.getElementById('btnClear').addEventListener('click', clearAll);
+    document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
     document.getElementById('themeToggle').addEventListener('click', () => {
       const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
       applyTheme(next);
