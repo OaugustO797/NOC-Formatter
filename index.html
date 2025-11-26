@@ -427,12 +427,44 @@
       if (!lines) return;
       downloadTxt(`${date}\n${lines.join('\n')}`, `lista_${date.replace(/\//g, '-')}.txt`);
     }
-    function exportXlsxDia(date) {
-      const lines = formatHistory[date];
-      if (!lines) return;
-      const payload = lines.map((l) => ({ Dia: date, Linha: l }));
-      exportChunkedXlsx(payload, ['Dia','Linha'], `lista_${date.replace(/\//g, '-')}`);
+
+    // ---------- NOVO: monta o registro no formato desejado ----------
+    function buildRegistroExcel(date, line) {
+      // espera algo como: "HH:MM - SERVICO - EMPRESA - STATUS"
+      const partes = line.split(' - ');
+      let hora = '';
+      let servico = '';
+      let empresa = '';
+      let observacao = line;
+      let atuacao = '';
+
+      if (partes.length >= 4) {
+        hora = partes[0].trim();
+        servico = partes[1].trim();
+        empresa = partes[2].trim();
+        observacao = partes.slice(3).join(' - ').trim();
+      }
+
+      const obsLower = observacao.toLowerCase();
+      if (obsLower.includes('execuç') || obsLower.includes('execuc')) {
+        atuacao = 'Execução';
+      } else if (obsLower.includes('sem atua')) {
+        atuacao = 'Sem atuação';
+      } else if (obsLower.includes('necessár') || obsLower.includes('necessar')) {
+        atuacao = 'Necessário execução';
+      }
+
+      const dataHora = date && hora ? `${date} ${hora}` : date || '';
+
+      return {
+        DataHora: dataHora,
+        Serviço: servico,
+        Empresa: empresa,
+        Observação: '',
+        Atuação: atuacao,
+      };
     }
+    // ----------------------------------------------------------------
 
     function downloadTxt(content, filename) {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
@@ -448,16 +480,38 @@
       downloadTxt(ultimaSaida.join('\n'), 'lista-formatada.txt');
     }
 
+    // ---------- ALTERADO: agora usa DataHora / Serviço / Empresa / Observação / Atuação ----------
+    function exportXlsxDia(date) {
+      const lines = formatHistory[date];
+      if (!lines) return;
+      const payload = lines.map((l) => buildRegistroExcel(date, l));
+      exportChunkedXlsx(
+        payload,
+        ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+        `lista_${date.replace(/\//g, '-')}`
+      );
+    }
+
     function exportXlsx() {
       if (!ultimaSaida.length) return alert('Nada para exportar.');
       const rows = [];
       let diaAtual = '';
+
       ultimaSaida.forEach((line) => {
-        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) { diaAtual = line; }
-        else rows.push({ Dia: diaAtual, Linha: line });
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) {
+          diaAtual = line;
+        } else if (diaAtual) {
+          rows.push(buildRegistroExcel(diaAtual, line));
+        }
       });
-      exportChunkedXlsx(rows, ['Dia','Linha'], 'lista-formatada');
+
+      exportChunkedXlsx(
+        rows,
+        ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+        'lista-formatada'
+      );
     }
+    // ---------------------------------------------------------------------------------------------
 
     function exportChunkedXlsx(jsonData, headers, baseName) {
       if (!jsonData.length) return alert('Nada para exportar.');
