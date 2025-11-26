@@ -44,10 +44,111 @@
       min-height: 100vh;
     }
 
-    .page {
-      max-width: 1100px;
+    .layout {
+      max-width: 1280px;
       margin: 0 auto;
-      padding: 28px 18px 40px;
+      padding: 24px 16px 40px;
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .sidebar {
+      width: 280px;
+      min-width: 260px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      z-index: 10;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .sidebar-title {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-close {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .sidebar-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 12px 10px;
+      background: var(--panel);
+      margin-bottom: 12px;
+    }
+
+    .sidebar-section h3 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); }
+
+    .theme-options { display: flex; gap: 10px; }
+    .theme-option {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: var(--card);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      cursor: pointer;
+      transition: border 0.2s ease, transform 0.2s ease;
+    }
+    .theme-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .theme-option input { accent-color: var(--accent); cursor: pointer; }
+
+    .rules-list {
+      margin: 0;
+      padding-left: 16px;
+      display: grid;
+      gap: 6px;
+      color: var(--text);
+    }
+    .rules-list strong { color: var(--accent); }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 9;
+    }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .page {
+      flex: 1;
+      max-width: 100%;
+      padding: 4px 2px 0;
       display: grid;
       gap: 18px;
     }
@@ -177,13 +278,83 @@
     .history-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
     .empty { color: var(--muted); font-style: italic; }
 
+    .sidebar-toggle {
+      display: none;
+      align-self: flex-start;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 960px) {
+      .layout { flex-direction: column; padding: 20px 14px 36px; }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        max-width: 360px;
+        width: 90vw;
+        transform: translateX(-105%);
+        border-radius: 0 12px 12px 0;
+        padding: 18px;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: inline-flex; gap: 8px; }
+      .page { padding-top: 0; }
+      body.sidebar-open { overflow: hidden; }
+    }
+
     @media (max-width: 720px) {
       .hero { flex-direction: column; gap: 12px; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="layout">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <p class="sidebar-title">Painel rápido</p>
+        <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">×</button>
+      </div>
+      <div class="sidebar-section">
+        <h3>Seleção de tema</h3>
+        <div class="theme-options">
+          <label class="theme-option">
+            <input type="radio" name="theme" value="dark" id="themeDark" checked>
+            <div>
+              <div style="font-weight:700;">Alto contraste</div>
+              <small style="color:var(--muted);">Fundo escuro</small>
+            </div>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="light" id="themeLight">
+            <div>
+              <div style="font-weight:700;">Claro</div>
+              <small style="color:var(--muted);">Ambiente iluminado</small>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <h3>Regras de atuação</h3>
+        <ul class="rules-list">
+          <li><strong>Execução</strong>: status contendo “serviço em execução”.</li>
+          <li><strong>Sem atuação</strong>: status informando ausência de ação.</li>
+          <li><strong>Necessário execução</strong>: status pedindo atuação futura.</li>
+          <li>Datas são incrementadas quando o horário anterior é maior que o próximo.</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="page">
+      <button class="sidebar-toggle" id="sidebarToggle">☰ Menu</button>
     <header class="hero">
       <div class="brand">
         <div class="brand-icon">◎</div>
@@ -240,6 +411,7 @@
       </div>
       <div id="historyList" class="grid" style="gap:10px;"></div>
     </section>
+    </main>
   </div>
 
   <script>
@@ -262,11 +434,20 @@
       return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth()+1).padStart(2, '0')}/${dt.getFullYear()}`;
     };
 
+    function syncThemeOptions(theme) {
+      const radio = document.querySelector(`input[name="theme"][value="${theme}"]`);
+      document.querySelectorAll('input[name="theme"]').forEach((input) => {
+        input.checked = input.value === theme;
+      });
+      if (radio) radio.checked = true;
+    }
+
     function applyTheme(theme) {
       const root = document.documentElement;
       if (theme === 'light') root.classList.add('light');
       else root.classList.remove('light');
       localStorage.setItem(themeKey, theme);
+      syncThemeOptions(theme);
     }
     function loadTheme() {
       const saved = localStorage.getItem(themeKey) || 'dark';
@@ -552,6 +733,31 @@
       const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
       applyTheme(next);
     });
+
+    document.querySelectorAll('input[name="theme"]').forEach((input) => {
+      input.addEventListener('change', (e) => applyTheme(e.target.value));
+    });
+
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+    const openSidebar = () => {
+      sidebar.classList.add('open');
+      sidebarBackdrop.classList.add('visible');
+      document.body.classList.add('sidebar-open');
+    };
+
+    const closeSidebar = () => {
+      sidebar.classList.remove('open');
+      sidebarBackdrop.classList.remove('visible');
+      document.body.classList.remove('sidebar-open');
+    };
+
+    sidebarToggle.addEventListener('click', openSidebar);
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarBackdrop.addEventListener('click', closeSidebar);
 
     window.addEventListener('load', () => {
       loadTheme();
