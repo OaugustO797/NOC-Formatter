@@ -104,6 +104,37 @@
       padding: 18px;
       box-shadow: var(--shadow);
     }
+    .app-shell {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .sidebar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 20px;
+      align-self: start;
+    }
+    .sidebar-title { margin: 0 0 10px 0; letter-spacing: -0.01em; }
+    .sidebar-hint { color: var(--muted); font-size: 0.92rem; margin-top: 10px; }
+    .tab-links { display: grid; gap: 8px; }
+    .tab-link {
+      width: 100%;
+      text-align: left;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .tab-link.active { background: linear-gradient(90deg, rgba(0,255,128,0.18), rgba(0,255,128,0.05)); border-color: var(--accent); }
+    .tab-panels { display: grid; gap: 14px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     h2 { margin: 0 0 10px 0; letter-spacing: -0.01em; }
     label { display: block; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
 
@@ -179,6 +210,8 @@
 
     @media (max-width: 720px) {
       .hero { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
     }
   </style>
 </head>
@@ -195,58 +228,94 @@
       <button class="theme-toggle" id="themeToggle">Alternar contraste 🌗</button>
     </header>
 
-    <section class="card grid">
-      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
-        <div>
-          <label for="rawInput">Cole a lista bruta</label>
-          <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h3 class="sidebar-title">Painel</h3>
+        <div class="tab-links">
+          <button class="tab-link active" data-target="principal">Principal</button>
+          <button class="tab-link" data-target="regras">Regras de atuação</button>
+          <button class="tab-link" data-target="historico">Histórico</button>
         </div>
-        <div>
-          <label for="formattedOutput">Resultado formatado</label>
-          <pre id="formattedOutput" class="mono-box"></pre>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="btnFormat">Formatar</button>
-        <button id="btnCopy">Copiar</button>
-        <button id="btnExportTxt">Exportar TXT</button>
-        <button id="btnExportXlsx">Exportar XLSX</button>
-        <button class="ghost" id="btnClear">Limpar</button>
-      </div>
-      <div class="stats">
-        <div class="pill">
-          <span class="dot" style="background:#1cff8e;"></span>
-          Execução: <span id="statExecucao">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:var(--danger);"></span>
-          Necessitam atuação: <span id="statAcao">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:var(--accent);"></span>
-          Total: <span id="statTotal">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:#9ef0ad;"></span>
-          Dias: <span id="statDias">--</span>
-        </div>
-      </div>
-    </section>
+        <p class="sidebar-hint">As regras são aplicadas antes de exibir e exportar as observações.</p>
+      </aside>
 
-    <section class="card">
-      <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
-        <h2 style="margin:0;">Histórico</h2>
-        <button class="ghost" id="btnClearHistory">Limpar histórico</button>
-      </div>
-      <div id="historyList" class="grid" style="gap:10px;"></div>
-    </section>
+      <main class="tab-panels">
+        <section class="card tab-panel active" id="tab-principal">
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+            <div>
+              <label for="rawInput">Cole a lista bruta</label>
+              <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
+            </div>
+            <div>
+              <label for="formattedOutput">Resultado formatado</label>
+              <pre id="formattedOutput" class="mono-box"></pre>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="btnFormat">Formatar</button>
+            <button id="btnCopy">Copiar</button>
+            <button id="btnExportTxt">Exportar TXT</button>
+            <button id="btnExportXlsx">Exportar XLSX</button>
+            <button class="ghost" id="btnClear">Limpar</button>
+          </div>
+          <div class="stats">
+            <div class="pill">
+              <span class="dot" style="background:#1cff8e;"></span>
+              Execução: <span id="statExecucao">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:var(--danger);"></span>
+              Necessitam atuação: <span id="statAcao">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:var(--accent);"></span>
+              Total: <span id="statTotal">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:#9ef0ad;"></span>
+              Dias: <span id="statDias">--</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card tab-panel" id="tab-regras">
+          <h2>Regras de atuação</h2>
+          <p style="color:var(--muted); margin-top:-4px;">Configure substituições aplicadas às observações.</p>
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+            <div>
+              <label for="ruleIncorrect">Padrão incorreto</label>
+              <textarea id="ruleIncorrect" rows="3" placeholder="Ex.: servico em execucao"></textarea>
+            </div>
+            <div>
+              <label for="ruleCorrect">Correção</label>
+              <textarea id="ruleCorrect" rows="3" placeholder="Ex.: Serviço em execução."></textarea>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:10px;">
+            <button id="btnAddRule">Adicionar regra</button>
+            <button class="ghost" id="btnClearRules">Limpar regras</button>
+          </div>
+          <div id="rulesList" class="grid" style="gap:10px; margin-top:12px;"></div>
+        </section>
+
+        <section class="card tab-panel" id="tab-historico">
+          <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">Histórico</h2>
+            <button class="ghost" id="btnClearHistory">Limpar histórico</button>
+          </div>
+          <div id="historyList" class="grid" style="gap:10px;"></div>
+        </section>
+      </main>
+    </div>
   </div>
 
   <script>
     const formatHistoryKey = 'nocMatrix_formatHistory';
     const themeKey = 'nocMatrix_theme';
+    const rulesKey = 'nocMatrix_rules';
     let ultimaSaida = [];
     let formatHistory = {}; // {date: [lines]}
+    let regrasAtuacao = [];
 
     const chunk = (arr, size) => {
       const res = [];
@@ -271,6 +340,66 @@
     function loadTheme() {
       const saved = localStorage.getItem(themeKey) || 'dark';
       applyTheme(saved);
+    }
+
+    const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    function aplicarRegras(texto) {
+      if (!regrasAtuacao.length || !texto) return texto;
+      return regrasAtuacao.reduce((acc, regra) => {
+        const pattern = new RegExp(escapeRegExp(regra.incorreto), 'gi');
+        return acc.replace(pattern, regra.correto);
+      }, texto);
+    }
+
+    function salvarRegras() {
+      localStorage.setItem(rulesKey, JSON.stringify(regrasAtuacao));
+    }
+
+    function renderRegras() {
+      const container = document.getElementById('rulesList');
+      container.innerHTML = '';
+      if (!regrasAtuacao.length) {
+        container.innerHTML = '<p class="empty">Nenhuma regra cadastrada.</p>';
+        return;
+      }
+      regrasAtuacao.forEach((regra, idx) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        const header = document.createElement('div');
+        header.className = 'history-header';
+        header.innerHTML = `<span>${regra.incorreto}</span><button class="danger" style="padding:6px 10px;">Excluir</button>`;
+        const content = document.createElement('div');
+        content.className = 'history-content';
+        content.style.display = 'block';
+        content.innerHTML = `<strong>Correção:</strong> ${regra.correto}`;
+        header.querySelector('button').addEventListener('click', () => {
+          regrasAtuacao.splice(idx, 1);
+          salvarRegras();
+          renderRegras();
+        });
+        item.appendChild(header);
+        item.appendChild(content);
+        container.appendChild(item);
+      });
+    }
+
+    function adicionarRegra() {
+      const incorreto = document.getElementById('ruleIncorrect').value.trim();
+      const correto = document.getElementById('ruleCorrect').value.trim();
+      if (!incorreto || !correto) return alert('Preencha o padrão incorreto e a correção.');
+      regrasAtuacao.push({ incorreto, correto });
+      document.getElementById('ruleIncorrect').value = '';
+      document.getElementById('ruleCorrect').value = '';
+      salvarRegras();
+      renderRegras();
+    }
+
+    function limparRegras() {
+      if (!regrasAtuacao.length) return;
+      if (!confirm('Deseja remover todas as regras salvas?')) return;
+      regrasAtuacao = [];
+      salvarRegras();
+      renderRegras();
     }
 
     function formatarLista() {
@@ -319,6 +448,8 @@
             status = statusOriginal;
           }
 
+          const observacaoCorrigida = aplicarRegras(status);
+
           const horaInt = parseInt(hora.split(':')[0], 10);
           if (currentDate && lastHour !== null && horaInt < lastHour) {
             currentDate = incDate(currentDate);
@@ -329,7 +460,7 @@
 
           empresas.forEach((emp) => {
             totalServicos++;
-            resultado.push(`${hora} - ${servico} - ${emp.toUpperCase()} - ${status}`);
+            resultado.push(`${hora} - ${servico} - ${emp.toUpperCase()} - ${observacaoCorrigida}`);
           });
         } else {
           resultado.push(texto);
@@ -445,7 +576,8 @@
         observacao = partes.slice(3).join(' - ').trim();
       }
 
-      const obsLower = observacao.toLowerCase();
+      const observacaoCorrigida = aplicarRegras(observacao);
+      const obsLower = observacaoCorrigida.toLowerCase();
       if (obsLower.includes('execuç') || obsLower.includes('execuc')) {
         atuacao = 'Execução';
       } else if (obsLower.includes('sem atua')) {
@@ -460,7 +592,7 @@
         DataHora: dataHora,
         Serviço: servico,
         Empresa: empresa,
-        Observação: '',
+        Observação: observacaoCorrigida,
         Atuação: atuacao,
       };
     }
@@ -540,6 +672,10 @@
     function loadAll() {
       const fmt = localStorage.getItem(formatHistoryKey);
       if (fmt) formatHistory = JSON.parse(fmt);
+      const savedRules = localStorage.getItem(rulesKey);
+      if (savedRules) {
+        try { regrasAtuacao = JSON.parse(savedRules) || []; } catch (_) { regrasAtuacao = []; }
+      }
     }
 
     document.getElementById('btnFormat').addEventListener('click', formatarLista);
@@ -548,6 +684,18 @@
     document.getElementById('btnExportXlsx').addEventListener('click', exportXlsx);
     document.getElementById('btnClear').addEventListener('click', clearAll);
     document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
+    document.getElementById('btnAddRule').addEventListener('click', adicionarRegra);
+    document.getElementById('btnClearRules').addEventListener('click', limparRegras);
+    document.querySelectorAll('.tab-link').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-link').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-target');
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.id === `tab-${target}`);
+        });
+      });
+    });
     document.getElementById('themeToggle').addEventListener('click', () => {
       const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
       applyTheme(next);
@@ -557,6 +705,7 @@
       loadTheme();
       loadAll();
       renderHistory();
+      renderRegras();
     });
   </script>
 </body>
