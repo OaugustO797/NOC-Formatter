@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="theme-dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,10 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
+      --radius: 12px;
+    }
+
+    :root.theme-dark {
       --bg: #050505;
       --panel: #0a0f0a;
       --card: #0f1410;
@@ -17,10 +21,11 @@
       --danger: #ff5978;
       --shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
       --border: #113b1f;
-      --radius: 12px;
+      --bg-glow-1: rgba(0, 255, 128, 0.08);
+      --bg-glow-2: rgba(0, 255, 128, 0.06);
     }
 
-    :root.light {
+    :root.theme-light {
       --bg: #f2fff4;
       --panel: #e9f6eb;
       --card: #ffffff;
@@ -31,15 +36,47 @@
       --danger: #c81e4a;
       --shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
       --border: #cde7d1;
+      --bg-glow-1: rgba(30, 163, 94, 0.18);
+      --bg-glow-2: rgba(30, 163, 94, 0.12);
+    }
+
+    :root.theme-ocean {
+      --bg: #04151f;
+      --panel: #072436;
+      --card: #0d3144;
+      --text: #e3f6ff;
+      --muted: #6dcaf2;
+      --accent: #35c2ff;
+      --accent-strong: #1aa5df;
+      --danger: #ff708c;
+      --shadow: 0 14px 30px rgba(3, 32, 51, 0.6);
+      --border: #0c3d56;
+      --bg-glow-1: rgba(53, 194, 255, 0.14);
+      --bg-glow-2: rgba(26, 165, 223, 0.1);
+    }
+
+    :root.theme-sunset {
+      --bg: #1c0f1b;
+      --panel: #261425;
+      --card: #31172f;
+      --text: #ffe9f9;
+      --muted: #e9a5d3;
+      --accent: #ff7dc2;
+      --accent-strong: #f452a8;
+      --danger: #ff8a64;
+      --shadow: 0 14px 30px rgba(49, 23, 47, 0.6);
+      --border: #43203d;
+      --bg-glow-1: rgba(244, 82, 168, 0.16);
+      --bg-glow-2: rgba(255, 138, 100, 0.1);
     }
 
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-      background: radial-gradient(circle at 20% 20%, rgba(0, 255, 128, 0.05), transparent 25%),
-                  radial-gradient(circle at 80% 10%, rgba(0, 255, 128, 0.04), transparent 20%),
-                  linear-gradient(180deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.98));
+      background: radial-gradient(circle at 20% 20%, var(--bg-glow-1), transparent 25%),
+                  radial-gradient(circle at 80% 10%, var(--bg-glow-2), transparent 20%),
+                  linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #000 10%), color-mix(in srgb, var(--bg) 96%, #000 4%));
       color: var(--text);
       min-height: 100vh;
     }
@@ -53,7 +90,7 @@
     }
 
     .hero {
-      background: linear-gradient(90deg, rgba(0, 255, 128, 0.08), rgba(0, 255, 128, 0));
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 16px 18px;
@@ -82,18 +119,61 @@
       color: var(--accent);
     }
 
-    .theme-toggle {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-weight: 700;
-      display: inline-flex;
-      gap: 8px;
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+    }
+
+    .sidebar h3 {
+      margin: 0 0 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .theme-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .theme-option {
+      display: flex;
       align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
       box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    .theme-option input {
+      accent-color: var(--accent);
+    }
+
+    .theme-sample {
+      width: 42px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        top: 0;
+      }
     }
 
     .grid { display: grid; gap: 14px; }
@@ -138,7 +218,7 @@
       letter-spacing: -0.01em;
       color: #041507;
       background: var(--accent);
-      box-shadow: 0 10px 26px rgba(0,255,128,0.15);
+      box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 30%, transparent);
     }
     button:hover { background: var(--accent-strong); }
     .ghost { background: transparent; color: var(--text); border: 1px solid var(--border); box-shadow: none; }
@@ -149,7 +229,7 @@
       padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: linear-gradient(90deg, rgba(0,255,128,0.15), rgba(0,255,128,0.04));
+      background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent) 8%, transparent));
       color: var(--text);
       display: inline-flex;
       gap: 8px;
@@ -166,7 +246,7 @@
     }
     .history-header {
       padding: 12px 14px;
-      background: rgba(0,255,128,0.08);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -192,54 +272,83 @@
           <div style="color:var(--muted);">Matrix edition • formate e exporte com segurança</div>
         </div>
       </div>
-      <button class="theme-toggle" id="themeToggle">Alternar contraste 🌗</button>
     </header>
 
-    <section class="card grid">
-      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
-        <div>
-          <label for="rawInput">Cole a lista bruta</label>
-          <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
+    <div class="layout">
+      <aside class="card sidebar">
+        <h3>Contraste e temas</h3>
+        <div class="theme-options" id="themeOptions">
+          <label class="theme-option">
+            <input type="radio" name="theme" value="dark" checked>
+            <span class="theme-sample" style="background: linear-gradient(135deg, #0f1410, #0a0f0a);"></span>
+            <span>Escuro (Matrix)</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="light">
+            <span class="theme-sample" style="background: linear-gradient(135deg, #ffffff, #e9f6eb);"></span>
+            <span>Claro</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="ocean">
+            <span class="theme-sample" style="background: linear-gradient(135deg, #0d3144, #072436);"></span>
+            <span>Oceano</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="theme" value="sunset">
+            <span class="theme-sample" style="background: linear-gradient(135deg, #31172f, #261425);"></span>
+            <span>Pôr do sol</span>
+          </label>
         </div>
-        <div>
-          <label for="formattedOutput">Resultado formatado</label>
-          <pre id="formattedOutput" class="mono-box"></pre>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="btnFormat">Formatar</button>
-        <button id="btnCopy">Copiar</button>
-        <button id="btnExportTxt">Exportar TXT</button>
-        <button id="btnExportXlsx">Exportar XLSX</button>
-        <button class="ghost" id="btnClear">Limpar</button>
-      </div>
-      <div class="stats">
-        <div class="pill">
-          <span class="dot" style="background:#1cff8e;"></span>
-          Execução: <span id="statExecucao">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:var(--danger);"></span>
-          Necessitam atuação: <span id="statAcao">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:var(--accent);"></span>
-          Total: <span id="statTotal">0</span>
-        </div>
-        <div class="pill">
-          <span class="dot" style="background:#9ef0ad;"></span>
-          Dias: <span id="statDias">--</span>
-        </div>
-      </div>
-    </section>
+      </aside>
 
-    <section class="card">
-      <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
-        <h2 style="margin:0;">Histórico</h2>
-        <button class="ghost" id="btnClearHistory">Limpar histórico</button>
-      </div>
-      <div id="historyList" class="grid" style="gap:10px;"></div>
-    </section>
+      <main class="grid" style="gap:14px;">
+        <section class="card grid">
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+            <div>
+              <label for="rawInput">Cole a lista bruta</label>
+              <textarea id="rawInput" placeholder="22:00 - SRVO - ABC, DEF - Serviço em execução"></textarea>
+            </div>
+            <div>
+              <label for="formattedOutput">Resultado formatado</label>
+              <pre id="formattedOutput" class="mono-box"></pre>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="btnFormat">Formatar</button>
+            <button id="btnCopy">Copiar</button>
+            <button id="btnExportTxt">Exportar TXT</button>
+            <button id="btnExportXlsx">Exportar XLSX</button>
+            <button class="ghost" id="btnClear">Limpar</button>
+          </div>
+          <div class="stats">
+            <div class="pill">
+              <span class="dot" style="background:#1cff8e;"></span>
+              Execução: <span id="statExecucao">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:var(--danger);"></span>
+              Necessitam atuação: <span id="statAcao">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:var(--accent);"></span>
+              Total: <span id="statTotal">0</span>
+            </div>
+            <div class="pill">
+              <span class="dot" style="background:#9ef0ad;"></span>
+              Dias: <span id="statDias">--</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="actions" style="margin-bottom:8px; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">Histórico</h2>
+            <button class="ghost" id="btnClearHistory">Limpar histórico</button>
+          </div>
+          <div id="historyList" class="grid" style="gap:10px;"></div>
+        </section>
+      </main>
+    </div>
   </div>
 
   <script>
@@ -262,12 +371,19 @@
       return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth()+1).padStart(2, '0')}/${dt.getFullYear()}`;
     };
 
+    const availableThemes = ['dark', 'light', 'ocean', 'sunset'];
+
     function applyTheme(theme) {
       const root = document.documentElement;
-      if (theme === 'light') root.classList.add('light');
-      else root.classList.remove('light');
-      localStorage.setItem(themeKey, theme);
+      const normalized = availableThemes.includes(theme) ? theme : 'dark';
+      root.classList.remove(...availableThemes.map((t) => `theme-${t}`));
+      root.classList.add(`theme-${normalized}`);
+      document.querySelectorAll('input[name="theme"]').forEach((input) => {
+        input.checked = input.value === normalized;
+      });
+      localStorage.setItem(themeKey, normalized);
     }
+
     function loadTheme() {
       const saved = localStorage.getItem(themeKey) || 'dark';
       applyTheme(saved);
@@ -542,18 +658,22 @@
       if (fmt) formatHistory = JSON.parse(fmt);
     }
 
+    function setupThemeOptions() {
+      const inputs = document.querySelectorAll('input[name="theme"]');
+      inputs.forEach((input) => {
+        input.addEventListener('change', (e) => applyTheme(e.target.value));
+      });
+    }
+
     document.getElementById('btnFormat').addEventListener('click', formatarLista);
     document.getElementById('btnCopy').addEventListener('click', copyLista);
     document.getElementById('btnExportTxt').addEventListener('click', exportTxt);
     document.getElementById('btnExportXlsx').addEventListener('click', exportXlsx);
     document.getElementById('btnClear').addEventListener('click', clearAll);
     document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
-      applyTheme(next);
-    });
 
     window.addEventListener('load', () => {
+      setupThemeOptions();
       loadTheme();
       loadAll();
       renderHistory();
