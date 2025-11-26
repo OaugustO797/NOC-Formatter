@@ -246,7 +246,6 @@
     const formatHistoryKey = 'nocMatrix_formatHistory';
     const themeKey = 'nocMatrix_theme';
     let ultimaSaida = [];
-    let ultimaTabela = [];
     let formatHistory = {}; // {date: [lines]}
 
     const chunk = (arr, size) => {
@@ -274,26 +273,10 @@
       applyTheme(saved);
     }
 
-    function statusToAtuacao(statusText) {
-      const normalized = statusText.toLowerCase();
-      if (normalized.includes('necessário') || normalized.includes('necessario')) return 'SIM';
-      if (normalized.includes('serviço em execução') || normalized.includes('servico em execucao') || normalized.includes('sem atuação') || normalized.includes('sem atuacao')) return 'NÃO';
-      return '';
-    }
-
-    function toIsoFromDateTime(dateStr, hourStr) {
-      if (!dateStr) return '';
-      const [d, m, y] = dateStr.split('/').map(Number);
-      const [hh, mi] = hourStr.split(':').map(Number);
-      const dt = new Date(y, m - 1, d, hh || 0, mi || 0, 0);
-      return dt.toISOString();
-    }
-
     function formatarLista() {
       const input = document.getElementById('rawInput').value;
       const linhas = input.split(/\n+/);
       const resultado = [];
-      const tabela = [];
       let countExecucao = 0;
       let countAcao = 0;
       let totalServicos = 0;
@@ -347,14 +330,6 @@
           empresas.forEach((emp) => {
             totalServicos++;
             resultado.push(`${hora} - ${servico} - ${emp.toUpperCase()} - ${status}`);
-            const iso = currentDate ? toIsoFromDateTime(currentDate, hora) : '';
-            tabela.push({
-              datahora: iso ? new Date(iso) : '',
-              servico,
-              empresa: emp.toUpperCase(),
-              observacao: status,
-              atuacao: statusToAtuacao(status)
-            });
           });
         } else {
           resultado.push(texto);
@@ -362,7 +337,6 @@
       });
 
       ultimaSaida = resultado.slice();
-      ultimaTabela = tabela;
       document.getElementById('formattedOutput').textContent = resultado.join('\n');
       document.getElementById('statExecucao').textContent = countExecucao;
       document.getElementById('statAcao').textContent = countAcao;
@@ -456,26 +430,8 @@
     function exportXlsxDia(date) {
       const lines = formatHistory[date];
       if (!lines) return;
-      const payload = buildStructuredRowsFromDay(date, lines);
-      exportChunkedXlsx(payload, ['DataHora','Servico','Empresa','Observacao','Atuacao'], `lista_${date.replace(/\//g, '-')}`, 'Tabela1');
-    }
-
-    function buildStructuredRowsFromDay(date, lines) {
-      return lines.map((line) => {
-        const match = line.match(/^(\d{1,2}:\d{2})\s*-\s*([A-Z\d]{4,})\s*-\s*([A-Z]+)\s*-\s*(.+)$/);
-        if (!match) {
-          return { DataHora: '', Servico: line, Empresa: '', Observacao: line, Atuacao: '' };
-        }
-        const [, hora, servico, empresa, obs] = match;
-        const iso = toIsoFromDateTime(date, hora);
-        return {
-          DataHora: iso ? new Date(iso) : '',
-          Servico: servico,
-          Empresa: empresa,
-          Observacao: obs,
-          Atuacao: statusToAtuacao(obs)
-        };
-      });
+      const payload = lines.map((l) => ({ Dia: date, Linha: l }));
+      exportChunkedXlsx(payload, ['Dia','Linha'], `lista_${date.replace(/\//g, '-')}`);
     }
 
     function downloadTxt(content, filename) {
@@ -493,79 +449,32 @@
     }
 
     function exportXlsx() {
-      if (!ultimaTabela.length) return alert('Nada para exportar.');
-      const rows = ultimaTabela.map((r) => ({
-        DataHora: r.datahora instanceof Date ? r.datahora : '',
-        Servico: r.servico,
-        Empresa: r.empresa,
-        Observacao: r.observacao,
-        Atuacao: r.atuacao
-      }));
-      exportChunkedXlsx(rows, ['DataHora','Servico','Empresa','Observacao','Atuacao'], 'lista-formatada', 'Tabela1');
-    }
-
-    function createTableWorksheet(part, headers, tableName) {
-      const ws = XLSX.utils.json_to_sheet(part, { header: headers, skipHeader: false });
-      ws['!cols'] = headers.map(() => ({ wch: 28 }));
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      const tableRef = XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: range.e.r } });
-
-      // Aplicar estilo de tabela azul com filtros e nome Tabela1 (ou sequência quando particionado)
-      ws['!autofilter'] = { ref: tableRef };
-      ws['!table'] = [
-        {
-          name: tableName,
-          displayName: tableName,
-          ref: tableRef,
-          tableStyle: {
-            name: 'TableStyleMedium2',
-            showFirstColumn: false,
-            showLastColumn: false,
-            showRowStripes: true,
-            showColumnStripes: false
-          },
-          columns: headers.map((name) => ({ name }))
-        }
-      ];
-
-      // Destacar cabeçalho no mesmo azul do estilo mostrado na referência
-      headers.forEach((_, idx) => {
-        const cell = XLSX.utils.encode_cell({ c: idx, r: 0 });
-        if (!ws[cell]) return;
-        ws[cell].s = {
-          fill: { patternType: 'solid', fgColor: { rgb: '4F81BD' } },
-          font: { bold: true, color: { rgb: 'FFFFFF' } },
-          alignment: { vertical: 'center', horizontal: 'left' }
-        };
+      if (!ultimaSaida.length) return alert('Nada para exportar.');
+      const rows = [];
+      let diaAtual = '';
+      ultimaSaida.forEach((line) => {
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(line)) { diaAtual = line; }
+        else rows.push({ Dia: diaAtual, Linha: line });
       });
-
-      // Garantir formatação de data/hora compatível com PowerApps
-      for (let r = 1; r <= range.e.r; r++) {
-        const cell = XLSX.utils.encode_cell({ c: 0, r });
-        const cellObj = ws[cell];
-        if (cellObj && cellObj.t === 'd') {
-          cellObj.z = 'yyyy-mm-dd"T"hh:mm:ss';
-        }
-      }
-
-      return ws;
+      exportChunkedXlsx(rows, ['Dia','Linha'], 'lista-formatada');
     }
 
-    function exportChunkedXlsx(jsonData, headers, baseName, tableName = 'Tabela1') {
+    function exportChunkedXlsx(jsonData, headers, baseName) {
       if (!jsonData.length) return alert('Nada para exportar.');
       const wb = XLSX.utils.book_new();
       const slices = chunk(jsonData, 256);
       slices.forEach((part, idx) => {
-        const numberedTable = slices.length === 1 ? tableName : `Tabela${idx + 1}`;
-        const ws = createTableWorksheet(part, headers, numberedTable);
+        const ws = XLSX.utils.json_to_sheet(part, { header: headers, skipHeader: false });
+        ws['!cols'] = headers.map(() => ({ wch: 28 }));
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: range.e.r } }) };
         XLSX.utils.book_append_sheet(wb, ws, `${baseName}_${idx + 1}`);
       });
-      XLSX.writeFile(wb, `${baseName}.xlsx`, { cellDates: true, cellStyles: true });
+      XLSX.writeFile(wb, `${baseName}.xlsx`);
     }
 
     function clearAll() {
       ultimaSaida = [];
-      ultimaTabela = [];
       document.getElementById('rawInput').value = '';
       document.getElementById('formattedOutput').textContent = '';
       document.getElementById('statExecucao').textContent = '0';
